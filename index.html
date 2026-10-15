@@ -84,6 +84,6 @@ function check(){
 function grade(g){record(g);next()}
 function record(g){st.total++;if(g){st.right++;delete st.wrong[cur]}else st.wrong[cur]=1;SS('cnq',st);stat()}
 function bindZoom(){document.querySelectorAll('.imgs img').forEach(i=>i.onclick=()=>{const z=document.getElementById('zoom');z.querySelector('img').src=i.src;z.style.display='flex'})}
-document.addEventListener('keydown',e=>{if(e.key=='Enter'){if(!done&&Q[cur].type!='reveal')check();else next()}});
+document.addEventListener('keydown',e=>{if(e.key=='Enter'&&cur!=null){if(!done&&Q[cur].type!='reveal')check();else next()}});
 next();
 </script></body></html>
