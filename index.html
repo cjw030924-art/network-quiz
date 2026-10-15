@@ -25,9 +25,11 @@ button.sec2{background:var(--opt);color:var(--fg);border:1px solid var(--bd)}but
 .ans{white-space:pre-wrap;line-height:1.6;background:var(--ok);border:2px solid var(--okbd);border-radius:6px;padding:14px;margin-top:12px}
 select{font:inherit;padding:6px;border-radius:6px;background:var(--card);color:var(--fg);border:1px solid var(--bd);max-width:100%}
 #zoom{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:9;cursor:zoom-out}#zoom img{max-width:96vw;max-height:96vh}
+.bar{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}.big{flex:1;min-width:150px;padding:16px;font-size:17px;background:#e5484d}.big.on{background:#2e9e44}.big.danger{flex:0 0 auto;background:var(--opt);color:var(--fg);border:1px solid var(--bd)}
 </style></head><body>
 <div class="wrap">
- <div class="top"><span id="stat"></span><span><select id="filter"></select> <label><input type="checkbox" id="wrongOnly"> 틀린 문제만</label></span></div>
+ <div class="top"><span id="stat"></span><span><select id="filter"></select> </span></div>
+ <div class="bar"><button id="wrongOnly" class="big">❌ 틀린 문제 풀기</button><button id="reset" class="big danger">🔄 전체 초기화</button></div>
  <div class="card" id="card"></div>
 </div>
 <div id="zoom" onclick="this.style.display='none'"><img></div>
@@ -37,17 +39,20 @@ const LS=k=>{try{return JSON.parse(localStorage.getItem(k))}catch(e){return null
 let st=LS('cnq')||{right:0,total:0,wrong:{}};
 let cur=null,picked,done,shown=0,deck=[],hist=[];
 function prev(){if(!hist.length)return;if(cur!=null)deck.push(cur);cur=hist.pop();shown--;picked=new Set();done=false;render()}
-const secs=[...new Set(Q.map(q=>q.sec))],F=document.getElementById('filter'),W=document.getElementById('wrongOnly');
+const secs=[...new Set(Q.map(q=>q.sec))],F=document.getElementById('filter'),W=document.getElementById('wrongOnly');let wm=false;
 F.innerHTML='<option value="">전체 ('+Q.length+'문제)</option>'+secs.map(s=>`<option>${esc(s)}</option>`).join('');
-F.onchange=W.onchange=()=>{deck=shuffle(pool().filter(i=>i!=cur));stat()};
+F.onchange=()=>{deck=wm?wrongDeck():shuffle(pool().filter(i=>i!=cur));if(wm){hist=[];cur=null;next()}else stat()};
+function wrongDeck(){return pool().reverse()}
+W.onclick=()=>{wm=!wm;hist=[];cur=null;shown=0;deck=wm?wrongDeck():shuffle(pool());next()};
+document.getElementById('reset').onclick=()=>{if(!confirm('정답 기록과 오답노트를 모두 지울까요?'))return;st={right:0,total:0,wrong:{}};SS('cnq',st);wm=false;hist=[];cur=null;shown=0;deck=shuffle(pool());next()};
 function esc(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'})[c])}
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a}
-function pool(){return Q.map((q,i)=>i).filter(i=>(!F.value||Q[i].sec==F.value)&&(!W.checked||st.wrong[i]))}
+function pool(){return Q.map((q,i)=>i).filter(i=>(!F.value||Q[i].sec==F.value)&&(!wm||st.wrong[i]))}
 function next(){
- if(!deck.length){deck=shuffle(pool());if(!deck.length){document.getElementById('card').innerHTML='<p>해당 문제가 없어요.</p>';stat();return}}
+ if(!deck.length){deck=wm?wrongDeck():shuffle(pool());if(!deck.length){if(cur!=null)hist.push(cur);cur=null;document.getElementById('card').innerHTML=wm?'<h1>틀린 문제가 없어요 🎉</h1><p>오답을 다 맞혔어요. 위 버튼을 눌러 전체 문제로 돌아가세요.</p>':'<p>해당 문제가 없어요.</p>';stat();return}}
  if(cur!=null)hist.push(cur);cur=deck.pop();picked=new Set();done=false;shown++;render();
 }
-function stat(){document.getElementById('stat').textContent=`정답 ${st.right} / ${st.total}`+(st.total?` (${Math.round(st.right/st.total*100)}%)`:'')+` · 남은 문제 ${deck.length} · 오답노트 ${Object.keys(st.wrong).length}`}
+function stat(){const nw=Object.keys(st.wrong).length;W.textContent=wm?`✅ 틀린 문제 모드 (남은 오답 ${nw}) — 끄기`:`❌ 틀린 문제 풀기 (${nw}개)`;W.classList.toggle("on",wm);document.getElementById('stat').textContent=`정답 ${st.right} / ${st.total}`+(st.total?` (${Math.round(st.right/st.total*100)}%)`:'')+` · 남은 문제 ${deck.length} · 오답노트 ${Object.keys(st.wrong).length}`}
 function render(){
  const q=Q[cur],c=document.getElementById('card');stat();
  let h=`<h1>Question ${shown}</h1><div class="sec">${esc(q.sec)}</div><div class="stem">${esc(q.stem)}</div>`;
