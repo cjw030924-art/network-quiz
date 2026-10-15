@@ -41,7 +41,7 @@ let cur=null,picked,done,shown=0,deck=[],hist=[];
 function prev(){if(!hist.length)return;if(cur!=null)deck.push(cur);cur=hist.pop();shown--;picked=new Set();done=false;render()}
 const secs=[...new Set(Q.map(q=>q.sec))],F=document.getElementById('filter'),W=document.getElementById('wrongOnly');let wm=false;
 F.innerHTML='<option value="">전체 ('+Q.length+'문제)</option>'+secs.map(s=>`<option>${esc(s)}</option>`).join('');
-F.onchange=()=>{deck=wm?wrongDeck():shuffle(pool().filter(i=>i!=cur));if(wm){hist=[];cur=null;next()}else stat()};
+F.onchange=()=>{hist=[];cur=null;shown=0;deck=wm?wrongDeck():shuffle(pool());next()};
 function wrongDeck(){return pool().reverse()}
 W.onclick=()=>{wm=!wm;hist=[];cur=null;shown=0;deck=wm?wrongDeck():shuffle(pool());next()};
 document.getElementById('reset').onclick=()=>{if(!confirm('정답 기록과 오답노트를 모두 지울까요?'))return;st={right:0,total:0,wrong:{}};SS('cnq',st);wm=false;hist=[];cur=null;shown=0;deck=shuffle(pool());next()};
